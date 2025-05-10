@@ -1,0 +1,3 @@
+Transit Tracks is an in development android app designed to provide real time info about nearby transit routes. As a hobby project the scope of this app will remain limited, with BC Transit Victoria and Metro Vancouver's Translink being the systems I intend to support. 
+
+Please note that the Google Maps API key needed to run this app is not included in this git repo. To create your own fork of this project you will need to create your own API key at 
