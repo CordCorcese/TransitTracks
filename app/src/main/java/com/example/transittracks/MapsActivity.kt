@@ -2,6 +2,7 @@ package com.example.transittracks
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import java.io.IOException
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -10,6 +11,8 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.example.transittracks.databinding.ActivityMapsBinding
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -40,9 +43,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
+        var string = ""
+        try{
+            val input = InputStreamReader(assets.open("BCTransitVictoria/stops.txt"))
+            val reader = BufferedReader(input)
+            var line = ""
+            reader.readLine() //Clear info line at the top
+            while(reader.readLine().also{line = it} != null){
+                val row : List<String> = line.split(",")
+                val stopLatLong = LatLng(row[2].toDouble(),row[3].toDouble())
+                mMap.addMarker(MarkerOptions().position(stopLatLong).title(row[1]))
+            }
+        }catch (e: IOException){
+            e.printStackTrace()
+        }
         // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        val Victoria = LatLng(48.4,-123.3)
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(Victoria))
     }
 }
