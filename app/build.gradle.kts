@@ -41,8 +41,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.google.dagger.compiler)
-    ksp(libs.google.dagger.compiler)
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.core.ktx)
