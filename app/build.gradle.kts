@@ -41,9 +41,12 @@ android {
 }
 
 dependencies {
+
+    val room_version = "2.7.1"
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.core.ktx)
+    implementation("androidx.room:room-ktx:$room_version")
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
