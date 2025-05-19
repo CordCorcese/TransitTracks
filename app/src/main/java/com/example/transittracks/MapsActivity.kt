@@ -114,32 +114,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
-        var string = ""
-        /*try{
-            val input = InputStreamReader(assets.open("BCTransitVictoria/stops.txt"))
-            val reader = BufferedReader(input)
-            var line = ""
-            reader.readLine() //Clear info line at the top
-            while(reader.readLine().also{line = it} != null){
-                val row : List<String> = line.split(",")
-                val stopLatLong = LatLng(row[2].toDouble(),row[3].toDouble())
-                mMap.addMarker(MarkerOptions().position(stopLatLong).title(row[1]))
-            }
-        }catch (e: IOException){
-            e.printStackTrace()
-        }*/
         val db = Room.databaseBuilder(
             applicationContext,
             AppDatabase::class.java, "static data"
@@ -147,7 +123,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val stopDao = db.stopDao()
         lifecycleScope.launch { //launch separate thread as Room cannot be accessed on main thread
             val stops: List<Stop> = stopDao.getAll()
-            for (stop in stops){
+            for (stop in stops){//adds all stops from database onto map as a Google Maps Marker
                 val stopLatLong = LatLng(stop.stopLat,stop.stopLon)
                 mMap.addMarker(MarkerOptions().position(stopLatLong).title(stop.stopName))
             }
