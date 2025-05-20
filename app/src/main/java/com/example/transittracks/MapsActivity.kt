@@ -101,7 +101,7 @@ fun makeStop(stopID: Int, stopName: String?, stopLat: Double, stopLon: Double, w
     return newStop
 }
 
-@Database(entities = [Stop::class, Route::class, Trip::class, StopTime::class, CalendarDate::class, Shape::class], version = 1)
+@Database(entities = [Stop::class, Route::class, Trip::class, StopTime::class, CalendarDate::class, Shape::class], version = 2)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun stopDao(): StopDao
 
@@ -111,7 +111,9 @@ abstract class AppDatabase : RoomDatabase() {
         fun getDatabase(context: Context): AppDatabase{
             //checks if database instance already exists
             return Instance ?: synchronized(this){
-                Room.databaseBuilder(context, AppDatabase::class.java, "static data").build().also { Instance=it }
+                Room.databaseBuilder(context, AppDatabase::class.java, "static data")
+                    .fallbackToDestructiveMigration(true)
+                    .build().also { Instance=it }
             }
         }
     }
@@ -145,10 +147,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        val db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "static data"
-        ).build()
+        val db = AppDatabase.getDatabase(applicationContext)
 
         try{
             val input = InputStreamReader(assets.open("BCTransitVictoria/stops.txt"))
@@ -168,10 +167,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        val db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "static data"
-        ).build()
+        val db = AppDatabase.getDatabase(applicationContext)
         val stopDao = db.stopDao()
         lifecycleScope.launch { //launch separate thread as Room cannot be accessed on main thread
             val stops: List<Stop> = stopDao.getAll()
