@@ -3,6 +3,7 @@ package com.example.transittracks
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.annotation.RequiresPermission
 import androidx.lifecycle.lifecycleScope
 import androidx.room.Dao
 import androidx.room.Database
@@ -37,6 +38,57 @@ data class Stop(
     val stopCode: Int
 )
 
+@Entity
+data class Route(
+    @PrimaryKey val routeID: String,
+    val routeShortName: String,
+    val routeLongName: String,
+    val routeType: Int,
+    val routeColour: String,
+    val routeTextColour: String
+)
+
+@Entity
+data class Trip(
+    val routeID: String,
+    val serviceID: Int,
+    @PrimaryKey val tripID: String,
+    val tripHeadSign: String,
+    val shapeID: Int,
+    val blockID: Int,
+    val directionID: Int
+)
+
+@Entity(primaryKeys = ["tripID","stopSequence"])
+data class StopTime(
+    val tripID: String,
+    val arrivalTime: String,
+    val departureTime: String,
+    val stopID: Int,
+    val stopSequence: Int,
+    val shapeDistTravelled: Int,
+    val stopHeadSign: String?,
+    val pickupType: Int,
+    val dropOffType: Int,
+    val timePoint: Int
+)
+
+@Entity
+data class CalendarDate(
+    val serviceID: Int,
+    @PrimaryKey val date: String,
+    val exceptionType: Int,
+)
+
+@Entity(primaryKeys = ["shapeID","shapePtSequence"])
+data class Shape(
+    val shapeID: Int,
+    val shapePtLat: Double,
+    val shapePtLon: Double,
+    val shapePtSequence: Int,
+    val shapeDistTravelled: Int
+)
+
 fun makeStop(stopID: Int, stopName: String?, stopLat: Double, stopLon: Double, wheelchair: Int, stopCode: Int ):Stop{
     val newStop = Stop(
         stopId = stopID,
@@ -49,7 +101,7 @@ fun makeStop(stopID: Int, stopName: String?, stopLat: Double, stopLon: Double, w
     return newStop
 }
 
-@Database(entities = [Stop::class], version = 1)
+@Database(entities = [Stop::class, Route::class, Trip::class, StopTime::class, CalendarDate::class, Shape::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun stopDao(): StopDao
 
