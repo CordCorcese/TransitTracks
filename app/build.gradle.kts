@@ -42,6 +42,8 @@ android {
 
 dependencies {
 
+    implementation(libs.places)
+    implementation(libs.play.services.location)
     val room_version = "2.7.1"
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
