@@ -110,9 +110,52 @@ fun makeStop(stopID: Int, stopName: String?, stopLat: Double, stopLon: Double, w
     return newStop
 }
 
+fun makeTrip(routeID: String, serviceID: Int, tripID: String, tripHeadSign: String, shapeID: Int, blockID: Int, directionID: Int):Trip{
+    val newTrip = Trip(
+        routeID = routeID,
+        serviceID = serviceID,
+        tripID = tripID,
+        tripHeadSign = tripHeadSign,
+        shapeID = shapeID,
+        blockID = blockID,
+        directionID = directionID
+    )
+    return newTrip
+}
+
+fun makeStopTime(tripID: String, arrivalTime: String,departureTime: String, stopID: Int,stopSequence: Int, shapeDistTravelled: Int,stopHeadSign: String?, pickupType: Int, dropOffType: Int, timePoint: Int ):StopTime{
+    val newStopTime = StopTime(
+        tripID = tripID,
+        arrivalTime = arrivalTime,
+        departureTime = departureTime,
+        stopID = stopID,
+        stopSequence = stopSequence,
+        shapeDistTravelled = shapeDistTravelled,
+        stopHeadSign = stopHeadSign,
+        pickupType = pickupType,
+        dropOffType = dropOffType,
+        timePoint = timePoint
+    )
+    return newStopTime
+}
+
+fun makeRoute(routeID: String, routeShortName: String, routeLongName: String,routeType: Int, routeColour: String, routeTextColour: String):Route{
+    val newRoute = Route(
+        routeID = routeID,
+        routeShortName = routeShortName,
+        routeLongName = routeLongName,
+        routeType = routeType,
+        routeColour = routeColour,
+        routeTextColour = routeTextColour)
+    return newRoute
+}
+
 @Database(entities = [Stop::class, Route::class, Trip::class, StopTime::class, CalendarDate::class, Shape::class], version = 2)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun stopDao(): StopDao
+    abstract fun routeDao(): RouteDao
+    abstract fun tripDao(): TripDao
+    abstract fun stopTimeDao(): StopTimeDao
 
     companion object{
         @Volatile
@@ -138,6 +181,57 @@ interface StopDao{
 
     @Query("SELECT * FROM Stop")
     suspend fun getAll(): List<Stop>
+
+    @Query("SELECT * FROM Stop WHERE stopId =:qstopID")
+    suspend fun getStop(qstopID: Int): List<Stop>
+
+    @Query("SELECT tripID FROM StopTime WHERE StopTime.stopID = :qstopID")
+    suspend fun getTripsIDsForStop(qstopID: Int): List<String>
+
+    @Query("SELECT * FROM trip WHERE tripID IN (SELECT DISTINCT tripID FROM StopTime WHERE stopID = :qstopID)")
+    suspend fun getTripsForStop(qstopID: Int): List<Trip>
+
+    @Query("SELECT * FROM route INNER JOIN (SELECT * FROM trip WHERE tripID IN (SELECT DISTINCT tripID FROM StopTime WHERE stopID = :qstopID)) y ON route.routeID = y.routeID")
+    suspend fun getRoutesForStop(qstopID: Int): List<Route>
+
+    @Query("DELETE FROM stop")
+    suspend fun deleteAllStops()
+}
+
+@Dao
+interface RouteDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertRoute(route: Route)
+
+    @Delete
+    fun delete(route: Route)
+
+    @Query("DELETE FROM Route")
+    suspend fun deleteAllRoutes()
+}
+
+@Dao
+interface StopTimeDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertStopTime(stopTime: StopTime)
+
+    @Delete
+    fun delete(stopTime: StopTime)
+
+    @Query ("DELETE FROM StopTime")
+    suspend fun deleteAllStopTimes()
+}
+
+@Dao
+interface TripDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTrip(trip: Trip)
+
+    @Delete
+    fun delete(trip: Trip)
+
+    @Query("DELETE FROM Trip")
+    suspend fun deleteAllTrips()
 }
 
 
@@ -185,6 +279,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val db = AppDatabase.getDatabase(applicationContext)
 
         try{
+            lifecycleScope.launch {db.stopDao().deleteAllStops()}
             val input = InputStreamReader(assets.open("BCTransitVictoria/stops.txt"))
             val reader = BufferedReader(input)
             var line = ""
@@ -193,6 +288,48 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 val row : List<String> = line.split(",")
                 val stop = makeStop(row[0].toInt(),row[1],row[2].toDouble(),row[3].toDouble(),row[4].toInt(),row[5].toInt())
                 lifecycleScope.launch { db.stopDao().insertStop(stop) }
+            }
+        }catch (e: IOException){
+            e.printStackTrace()
+        }
+        try{
+            lifecycleScope.launch {db.routeDao().deleteAllRoutes()}
+            val input = InputStreamReader(assets.open("BCTransitVictoria/routes.txt"))
+            val reader = BufferedReader(input)
+            var line = ""
+            reader.readLine() //Clear info line at the top
+            while(reader.readLine().also{line = it} != null){
+                val row : List<String> = line.split(",")
+                val route = makeRoute(row[0],row[1],row[2],row[3].toInt(),row[4],row[5])
+                lifecycleScope.launch { db.routeDao().insertRoute(route) }
+            }
+        }catch (e: IOException){
+            e.printStackTrace()
+        }
+        try{
+            lifecycleScope.launch {db.tripDao().deleteAllTrips()}
+            val input = InputStreamReader(assets.open("BCTransitVictoria/trips.txt"))
+            val reader = BufferedReader(input)
+            var line = ""
+            reader.readLine() //Clear info line at the top
+            while(reader.readLine().also{line = it} != null){
+                val row : List<String> = line.split(",")
+                val trip = makeTrip(row[0],row[1].toInt(),row[2],row[3],row[4].toInt(),row[5].toInt(),row[6].toInt())
+                lifecycleScope.launch { db.tripDao().insertTrip(trip) }
+            }
+        }catch (e: IOException){
+            e.printStackTrace()
+        }
+        try{
+            lifecycleScope.launch {db.stopTimeDao().deleteAllStopTimes()}
+            val input = InputStreamReader(assets.open("BCTransitVictoria/stop_times.txt"))
+            val reader = BufferedReader(input)
+            var line = ""
+            reader.readLine() //Clear info line at the top
+            while(reader.readLine().also{line = it} != null){
+                val row : List<String> = line.split(",")
+                val stopTime = makeStopTime(row[0],row[1],row[2],row[3].toInt(),row[4].toInt(),row[5].toInt(), row[6], row[7].toInt(),row[8].toInt(),row[9].toInt())
+                lifecycleScope.launch { db.stopTimeDao().insertStopTime(stopTime) }
             }
         }catch (e: IOException){
             e.printStackTrace()
@@ -209,7 +346,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             val stops: List<Stop> = stopDao.getAll()
             for (stop in stops){//adds all stops from database onto map as a Google Maps Marker
                 val stopLatLong = LatLng(stop.stopLat,stop.stopLon)
-                mMap.addMarker(MarkerOptions().position(stopLatLong).title(stop.stopName))
+                val trips = stopDao.getTripsIDsForStop(stop.stopId)
+                val triptest = trips
+                val routes = stopDao.getRoutesForStop(stop.stopId)
+                var routeString = "routes: "
+                for(route in routes){
+                    routeString += (route.routeShortName + " ")
+                }
+                mMap.addMarker(MarkerOptions().position(stopLatLong).title(stop.stopName).snippet(routeString))
             }
 
             val Victoria = LatLng(48.4,-123.3)
