@@ -165,6 +165,7 @@ abstract class AppDatabase : RoomDatabase() {
             return Instance ?: synchronized(this){
                 Room.databaseBuilder(context, AppDatabase::class.java, "static data")
                     .fallbackToDestructiveMigration(true)
+                    .createFromAsset("BCTransitVictoria/TransitTracks.db")
                     .build().also { Instance=it }
             }
         }
@@ -277,63 +278,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         val db = AppDatabase.getDatabase(applicationContext)
-
-        try{
-            lifecycleScope.launch {db.stopDao().deleteAllStops()}
-            val input = InputStreamReader(assets.open("BCTransitVictoria/stops.txt"))
-            val reader = BufferedReader(input)
-            var line = ""
-            reader.readLine() //Clear info line at the top
-            while(reader.readLine().also{line = it} != null){
-                val row : List<String> = line.split(",")
-                val stop = makeStop(row[0].toInt(),row[1],row[2].toDouble(),row[3].toDouble(),row[4].toInt(),row[5].toInt())
-                lifecycleScope.launch { db.stopDao().insertStop(stop) }
-            }
-        }catch (e: IOException){
-            e.printStackTrace()
-        }
-        try{
-            lifecycleScope.launch {db.routeDao().deleteAllRoutes()}
-            val input = InputStreamReader(assets.open("BCTransitVictoria/routes.txt"))
-            val reader = BufferedReader(input)
-            var line = ""
-            reader.readLine() //Clear info line at the top
-            while(reader.readLine().also{line = it} != null){
-                val row : List<String> = line.split(",")
-                val route = makeRoute(row[0],row[1],row[2],row[3].toInt(),row[4],row[5])
-                lifecycleScope.launch { db.routeDao().insertRoute(route) }
-            }
-        }catch (e: IOException){
-            e.printStackTrace()
-        }
-        try{
-            lifecycleScope.launch {db.tripDao().deleteAllTrips()}
-            val input = InputStreamReader(assets.open("BCTransitVictoria/trips.txt"))
-            val reader = BufferedReader(input)
-            var line = ""
-            reader.readLine() //Clear info line at the top
-            while(reader.readLine().also{line = it} != null){
-                val row : List<String> = line.split(",")
-                val trip = makeTrip(row[0],row[1].toInt(),row[2],row[3],row[4].toInt(),row[5].toInt(),row[6].toInt())
-                lifecycleScope.launch { db.tripDao().insertTrip(trip) }
-            }
-        }catch (e: IOException){
-            e.printStackTrace()
-        }
-        try{
-            lifecycleScope.launch {db.stopTimeDao().deleteAllStopTimes()}
-            val input = InputStreamReader(assets.open("BCTransitVictoria/stop_times.txt"))
-            val reader = BufferedReader(input)
-            var line = ""
-            reader.readLine() //Clear info line at the top
-            while(reader.readLine().also{line = it} != null){
-                val row : List<String> = line.split(",")
-                val stopTime = makeStopTime(row[0],row[1],row[2],row[3].toInt(),row[4].toInt(),row[5].toInt(), row[6], row[7].toInt(),row[8].toInt(),row[9].toInt())
-                lifecycleScope.launch { db.stopTimeDao().insertStopTime(stopTime) }
-            }
-        }catch (e: IOException){
-            e.printStackTrace()
-        }
 
     }
 
