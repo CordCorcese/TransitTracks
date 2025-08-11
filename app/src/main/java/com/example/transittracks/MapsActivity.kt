@@ -192,7 +192,7 @@ interface StopDao{
     @Query("SELECT * FROM trip WHERE tripID IN (SELECT DISTINCT tripID FROM StopTime WHERE stopID = :qstopID)")
     suspend fun getTripsForStop(qstopID: Int): List<Trip>
 
-    @Query("SELECT * FROM route INNER JOIN (SELECT * FROM trip WHERE tripID IN (SELECT DISTINCT tripID FROM StopTime WHERE stopID = :qstopID)) y ON route.routeID = y.routeID")
+    @Query("SELECT * FROM route INNER JOIN (SELECT * FROM trip WHERE tripID IN (SELECT DISTINCT tripID FROM StopTime WHERE stopID = :qstopID)) y ON route.routeID = y.routeID GROUP BY y.routeID")
     suspend fun getRoutesForStop(qstopID: Int): List<Route>
 
     @Query("DELETE FROM stop")
